@@ -1,0 +1,50 @@
+# Ignore folders
+thirdparty/glew-2.1.0
+thirdparty/glfw-3.3.4
+thirdparty/glm-master
+thirdparty/imgui-master
+thirdparty/lpng1637
+.vs/
+x64/Release
+x64/Debug
+
+# Visual Studio
+*.vcxproj.user
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Exceptions
+!thirdparty/lpng-lib/libpng16.dll
+!thirdparty/lpng-lib/libpng16.lib
+!x64/data/sponza.obj
