@@ -22,3 +22,8 @@ GLFW   -> "/thirdparty/glfw-3.3.4"
 GLM    -> "/thirdparty/glm-master"
 IMGUI  -> "/thirdparty/imgui-master"
 libPNG -> "/thirdparty/lpng1637"
+
+************************
+* libPNG configuration *
+************************
+If the compile fails trying to find pnglibconf.h, copy "lpng1637/scripts/pnglibconf.h.prebuilt" to "lpng1637/" and rename it to pnglibconf.h
