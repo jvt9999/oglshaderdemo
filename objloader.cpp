@@ -24,7 +24,7 @@ static void error(ObjectFile::fnErrFunc errFunc, int id, const char* msg, ...)
 }
 
 // Only for png files!
-GLuint loadTexture(const char* file)
+GLuint loadTexture(const char* file, GLint wrapS = GL_REPEAT, GLint wrapT = GL_REPEAT)
 {
     FILE* f = fopen(file, "rb");
     if (f)
@@ -84,8 +84,8 @@ GLuint loadTexture(const char* file)
         glBindTexture(GL_TEXTURE_2D, texId);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &buffer[0]);
         glGenerateMipmap(GL_TEXTURE_2D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 16.0f);
@@ -141,12 +141,12 @@ void ObjectFile::setErrorCallback(fnErrFunc func)
     m_errorCallback = func;
 }
 
-bool ObjectFile::loadTextureFile(const char* filename, GLuint& outId)
+bool ObjectFile::loadTextureFile(const char* filename, GLuint& outId, GLint wrapS, GLint wrapT)
 {
     if (strlen(filename) > 0)
     {
         std::string texFile = combinePath(m_dataPath.c_str(), filename);
-        outId = loadTexture(texFile.c_str());
+        outId = loadTexture(texFile.c_str(), wrapS, wrapT);
         return true;
     }
     return false;
@@ -216,10 +216,12 @@ void ObjectFile::setVertexDescriptor()
 {
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, MeshVertex::m_position));
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, MeshVertex::m_normal));
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, MeshVertex::m_texCoord));
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, MeshVertex::m_tangent));
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, MeshVertex::m_texCoord));
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
 }
 
 bool ObjectFile::loadFile(const char* filename)
@@ -445,12 +447,66 @@ bool ObjectFile::loadFile(const char* filename)
             }
         };
         fclose(f);
+        generateTangents();
     }
     else
     {
         CANNOT_OPEN(filename);
     }
     return true;
+}
+
+void ObjectFile::generateTangents()
+{
+    for (std::unique_ptr<Mesh>& mesh : m_meshes)
+    {
+        std::vector<MeshVertex>& vertices = mesh->m_vertices;
+        std::vector<glm::vec3> binormals;
+        binormals.resize(mesh->m_vertices.size());
+        memset(&binormals[0], 0, sizeof(glm::vec3) * binormals.size());
+
+        for (std::unique_ptr<SubMesh>& subMesh : mesh->m_subMeshes)
+        {
+            std::vector<unsigned int>& indices = subMesh->m_indices;
+            size_t numFaces = indices.size() / 3;
+            for (size_t face = 0; face < numFaces; face++)
+            {
+                MeshVertex& v1 = vertices[indices[face * 3 + 0]];
+                MeshVertex& v2 = vertices[indices[face * 3 + 1]];
+                MeshVertex& v3 = vertices[indices[face * 3 + 2]];
+
+                glm::vec3 dp1 = v2.m_position - v1.m_position;
+                glm::vec3 dp2 = v3.m_position - v1.m_position;
+                glm::vec2 duv1 = v2.m_texCoord - v1.m_texCoord;
+                glm::vec2 duv2 = v3.m_texCoord - v1.m_texCoord;
+
+                float r = 1.0f / (duv1.x * duv2.y - duv1.y * duv2.x);
+                glm::vec3 tangentVec = r * (dp1 * duv2.y - dp2 * duv1.y);
+                glm::vec3 binormVec = r * (duv1.x * dp2 - duv2.x * dp1);
+                v1.m_tangent += tangentVec;
+                v2.m_tangent += tangentVec;
+                v3.m_tangent += tangentVec;
+                binormals[indices[face * 3 + 0]] += binormVec;
+                binormals[indices[face * 3 + 1]] += binormVec;
+                binormals[indices[face * 3 + 2]] += binormVec;
+            }
+        }
+
+        for (size_t i = 0; i < vertices.size(); i++)
+        {
+            MeshVertex& vert = vertices[i];
+            glm::vec3 normal = vert.m_normal;
+            glm::vec3 tangent = vert.m_tangent;
+            glm::vec3 binormal = binormals[i];
+
+            vert.m_tangent = glm::normalize(tangent - normal * glm::dot(normal, tangent));
+
+            if (glm::dot(glm::cross(tangent, normal), binormal) < 0.0f)
+            {
+                vert.m_tangent *= -1.0f;
+            }
+        }
+    }
 }
 
 bool ObjectFile::loadMaterialLibrary(const char* filename)

@@ -100,7 +100,7 @@ struct DemoState
     glm::vec3 m_cameraPosition = glm::vec3(-900.0f, 200.0f, 0);
     glm::vec3 m_cameraDirection = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 m_cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 m_ambientColor = glm::vec3(0.1f, 0.1f, 0.1f);
+    glm::vec3 m_ambientColor = glm::vec3(0.25f, 0.25f, 0.25f);
     DirectionalLight m_directionalLight;
     SpotLight m_spotLight;
     PointLight m_pointLight;
@@ -115,8 +115,8 @@ struct DemoState
     // Player Movement
     float m_yaw = 0.0f;
     float m_pitch = 0.0f;
-    float m_moveSpeed = 100.0f;
-    float m_sensitivity = 0.1f;
+    float m_moveSpeed = 400.0f;
+    float m_sensitivity = 0.4f;
 
     // Shader editing
     ShaderState m_pixelShaders[(int)ShaderType::NumShaderTypes];
@@ -129,7 +129,7 @@ struct DemoState
     DemoState()
     {
         m_directionalLight.m_lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        m_directionalLight.m_lightDirection = glm::vec3(-0.859f, -0.399f, -0.319f);
+        m_directionalLight.m_lightDirection = glm::vec3(0.826f, -0.311f, -0.471f);
 
         m_spotLight.m_lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
         m_spotLight.m_lightPosition = glm::vec3(-775.0f, 800.0f, -50.0f);

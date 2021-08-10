@@ -9,6 +9,7 @@ uniform sampler2D specularPowerTex;
 
 in vec4 v_worldPos;
 in vec3 v_normal;
+in vec3 v_tangent;
 in vec2 v_texCoord;
 out vec4 fragColor;
 

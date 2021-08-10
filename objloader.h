@@ -54,8 +54,9 @@ namespace ObjLoader
     {
         glm::vec4 m_position;
         glm::vec3 m_normal;
+        glm::vec3 m_tangent;
         glm::vec2 m_texCoord;
-        MeshVertex() : m_position(0), m_normal(0), m_texCoord(0) {}
+        MeshVertex() : m_position(0), m_normal(0), m_tangent(0), m_texCoord(0) {}
 
     };
     struct Mesh
@@ -84,8 +85,9 @@ namespace ObjLoader
         void setVertexDescriptor();
         const std::vector<std::unique_ptr<Mesh>>& meshes() const { return m_meshes; }
     private:
-        bool loadTextureFile(const char* filename, GLuint& outId);
+        bool loadTextureFile(const char* filename, GLuint& outId, GLint wrapS = GL_REPEAT, GLint wrapT = GL_REPEAT);
         bool loadMaterialLibrary(const char* filename);
+        void generateTangents();
         fnErrFunc m_errorCallback;
         std::string m_dataPath;
         std::map<std::string, std::unique_ptr<Material>> m_materialLibrary;

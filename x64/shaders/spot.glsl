@@ -19,6 +19,8 @@ uniform sampler2D specularPowerTex;
 
 in vec4 v_worldPos;
 in vec3 v_normal;
+in vec3 v_tangent;
+in vec3 v_binormal;
 in vec2 v_texCoord;
 out vec4 fragColor;
 
@@ -35,15 +37,24 @@ float attenuate(float value, float minimum, float maximum)
     return 1.0f - (clamp(value, minimum, maximum) - minimum) / (maximum - minimum);
 }
 
+mat3 tbn(vec3 tangent, vec3 binormal, vec3 normal)
+{
+    return mat3(tangent, binormal, normal);
+}
+
 void main()
 {
     vec4 diffuse = texture2D(diffuseTex, v_texCoord);
+    vec3 normalMap = texture2D(normalTex, v_texCoord).rgb;
     vec3 specularColor = texture2D(specularColorTex, v_texCoord).rgb;
     float specularPower = texture2D(specularPowerTex, v_texCoord).r;
 
     if (diffuse.a < 0.1f)
         discard;
-    vec3 normal = normalize(v_normal);        
+
+    vec3 tangentNormal = 2.0f * (normalMap - vec3(0.5));
+    vec3 normal = tbn(normalize(v_tangent), normalize(v_binormal), normalize(v_normal)) * normalize(tangentNormal);        
+
     float NdotL = clamp(dot(normal, -lightDir), 0, 1);
 
     vec3 lightToSurface = normalize(v_worldPos.xyz - lightPos);
